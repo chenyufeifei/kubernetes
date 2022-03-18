@@ -71,11 +71,13 @@ type APIServerHandler struct {
 type HandlerChainBuilderFn func(apiHandler http.Handler) http.Handler
 
 func NewAPIServerHandler(name string, s runtime.NegotiatedSerializer, handlerChainBuilder HandlerChainBuilderFn, notFoundHandler http.Handler) *APIServerHandler {
+	// 创建一个PathRecorderMux，处理非restful请求
 	nonGoRestfulMux := mux.NewPathRecorderMux(name)
+	// 如果存在notFoundHandler，在没有匹配的handler时，会使用notFoundHandler
 	if notFoundHandler != nil {
 		nonGoRestfulMux.NotFoundHandler(notFoundHandler)
 	}
-
+	// 创建容器，初级restful请求
 	gorestfulContainer := restful.NewContainer()
 	gorestfulContainer.ServeMux = http.NewServeMux()
 	gorestfulContainer.Router(restful.CurlyRouter{}) // e.g. for proxy/{kind}/{name}/{*}

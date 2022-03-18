@@ -565,16 +565,20 @@ func (c *RecommendedConfig) Complete() CompletedConfig {
 // name is used to differentiate for logging. The handler chain in particular can be difficult as it starts delegating.
 // delegationTarget may not be nil.
 func (c completedConfig) New(name string, delegationTarget DelegationTarget) (*GenericAPIServer, error) {
+	// Serializer用于序列化
 	if c.Serializer == nil {
 		return nil, fmt.Errorf("Genericapiserver.New() called with config.Serializer == nil")
 	}
+	// 连接 API server 的特权回环连接的配置？
 	if c.LoopbackClientConfig == nil {
 		return nil, fmt.Errorf("Genericapiserver.New() called with config.LoopbackClientConfig == nil")
 	}
+	// EquivalentResourceRegistry提供与给定资源等效的资源以及与给定资源关联的资源种类的信息。安装资源后，它们将在此处注册。
 	if c.EquivalentResourceRegistry == nil {
 		return nil, fmt.Errorf("Genericapiserver.New() called with config.EquivalentResourceRegistry == nil")
 	}
 
+	// BuildHandlerChainFunc allows you to build custom handler chains by decorating the apiHandler.
 	handlerChainBuilder := func(handler http.Handler) http.Handler {
 		return c.BuildHandlerChainFunc(handler, c.Config)
 	}

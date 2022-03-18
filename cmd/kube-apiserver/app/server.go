@@ -82,7 +82,7 @@ import (
 
 // NewAPIServerCommand creates a *cobra.Command object with default parameters
 func NewAPIServerCommand() *cobra.Command {
-	s := options.NewServerRunOptions()
+	s := options.NewServerRunOptions() // s 是默认的ServerRunOptions配置
 	cmd := &cobra.Command{
 		Use: "kube-apiserver",
 		Long: `The Kubernetes API server validates and configures data
@@ -154,16 +154,19 @@ func Run(completeOptions completedServerRunOptions, stopCh <-chan struct{}) erro
 
 	klog.InfoS("Golang settings", "GOGC", os.Getenv("GOGC"), "GOMAXPROCS", os.Getenv("GOMAXPROCS"), "GOTRACEBACK", os.Getenv("GOTRACEBACK"))
 
+	// 创建服务链
 	server, err := CreateServerChain(completeOptions, stopCh)
 	if err != nil {
 		return err
 	}
 
+	// 预运行
 	prepared, err := server.PrepareRun()
 	if err != nil {
 		return err
 	}
 
+	// 正式运行，会调用 preparedGenericAPIServer 对象的Run方法
 	return prepared.Run(stopCh)
 }
 
@@ -175,24 +178,26 @@ func CreateServerChain(completedOptions completedServerRunOptions, stopCh <-chan
 	}
 
 	// If additional API servers are added, they should be gated.
+	// 配置APIExtensionsServer， 并创建服务
 	apiExtensionsConfig, err := createAPIExtensionsConfig(*kubeAPIServerConfig.GenericConfig, kubeAPIServerConfig.ExtraConfig.VersionedInformers, pluginInitializer, completedOptions.ServerRunOptions, completedOptions.MasterCount,
 		serviceResolver, webhook.NewDefaultAuthenticationInfoResolverWrapper(kubeAPIServerConfig.ExtraConfig.ProxyTransport, kubeAPIServerConfig.GenericConfig.EgressSelector, kubeAPIServerConfig.GenericConfig.LoopbackClientConfig, kubeAPIServerConfig.GenericConfig.TracerProvider))
 	if err != nil {
 		return nil, err
 	}
-
 	notFoundHandler := notfoundhandler.New(kubeAPIServerConfig.GenericConfig.Serializer, genericapifilters.NoMuxAndDiscoveryIncompleteKey)
 	apiExtensionsServer, err := createAPIExtensionsServer(apiExtensionsConfig, genericapiserver.NewEmptyDelegateWithCustomHandler(notFoundHandler))
 	if err != nil {
 		return nil, err
 	}
 
+	// 创建kubeAPIServerConfig服务
 	kubeAPIServer, err := CreateKubeAPIServer(kubeAPIServerConfig, apiExtensionsServer.GenericAPIServer)
 	if err != nil {
 		return nil, err
 	}
 
 	// aggregator comes last in the chain
+	// 配置 AggregatorServer，
 	aggregatorConfig, err := createAggregatorConfig(*kubeAPIServerConfig.GenericConfig, completedOptions.ServerRunOptions, kubeAPIServerConfig.ExtraConfig.VersionedInformers, serviceResolver, kubeAPIServerConfig.ExtraConfig.ProxyTransport, pluginInitializer)
 	if err != nil {
 		return nil, err
@@ -228,7 +233,7 @@ func CreateProxyTransport() *http.Transport {
 	return proxyTransport
 }
 
-// CreateKubeAPIServerConfig creates all the resources for running the API server, but runs none of them
+// CreateKubeAPIServerConfig 未运行 API Server  创建所有的资源，但并不运行它们
 func CreateKubeAPIServerConfig(s completedServerRunOptions) (
 	*controlplane.Config,
 	aggregatorapiserver.ServiceResolver,

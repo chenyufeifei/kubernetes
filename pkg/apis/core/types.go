@@ -2567,6 +2567,33 @@ type Affinity struct {
 	// Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the same node, zone, etc. as some other pod(s)).
 	// +optional
 	PodAntiAffinity *PodAntiAffinity
+
+	ClusterAffinity *ClusterAffinity
+}
+
+type ClusterAffinity struct {
+	RequiredDuringSchedulingIgnoredDuringExecution *ClusterSelector
+	PreferredDuringSchedulingIgnoredDuringExecution []PreferredSchedulingClusterTerm
+}
+
+type ClusterSelector struct {
+	ClusterSelectorTerms []ClusterSelectorTerm
+}
+
+type ClusterSelectorTerm struct {
+	MatchExpressions []ClusterSelectorRequirement
+	MatchFields []ClusterSelectorRequirement
+}
+
+type ClusterSelectorRequirement struct {
+	Key string
+	Operator NodeSelectorOperator
+	Values []string
+}
+
+type PreferredSchedulingClusterTerm struct {
+	Weight int32
+	Preference ClusterSelectorTerm
 }
 
 // PodAffinity is a group of inter pod affinity scheduling rules.
@@ -2794,6 +2821,14 @@ type Toleration struct {
 	TolerationSeconds *int64
 }
 
+type ClusterToleration struct {
+	Key string
+	Operator TolerationOperator
+	Value string
+	Effect TaintEffect
+	TolerationSeconds *int64
+}
+
 // TolerationOperator is the set of operators that can be used in a toleration.
 type TolerationOperator string
 
@@ -2850,6 +2885,8 @@ type PodSpec struct {
 	// +optional
 	NodeSelector map[string]string
 
+	ClusterSelector map[string]string
+
 	// ServiceAccountName is the name of the ServiceAccount to use to run this pod
 	// The pod will be allowed to use secrets referenced by the ServiceAccount
 	ServiceAccountName string
@@ -2862,6 +2899,9 @@ type PodSpec struct {
 	// requirements.
 	// +optional
 	NodeName string
+
+	ClusterName string
+
 	// SecurityContext holds pod-level security attributes and common container settings.
 	// Optional: Defaults to empty.  See type description for default values of each field.
 	// +optional
@@ -2887,7 +2927,7 @@ type PodSpec struct {
 	SetHostnameAsFQDN *bool
 	// If specified, the pod's scheduling constraints
 	// +optional
-	Affinity *Affinity
+	Affinity *Affinity // add clusterAffinity
 	// If specified, the pod will be dispatched by specified scheduler.
 	// If not specified, the pod will be dispatched by default scheduler.
 	// +optional
@@ -2895,6 +2935,8 @@ type PodSpec struct {
 	// If specified, the pod's tolerations.
 	// +optional
 	Tolerations []Toleration
+
+	ClusterTolerations []ClusterToleration
 	// HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts
 	// file if specified. This is only valid for non-hostNetwork pods.
 	// +optional
@@ -4128,6 +4170,8 @@ type NodeSpec struct {
 	// +optional
 	Taints []Taint
 
+	ClusterTaints []ClusterTaints
+
 	// Deprecated: Previously used to specify the source of the node's configuration for the DynamicKubeletConfig feature. This feature is removed from Kubelets as of 1.24 and will be fully removed in 1.26.
 	// +optional
 	ConfigSource *NodeConfigSource
@@ -4136,6 +4180,13 @@ type NodeSpec struct {
 	// see: https://issues.k8s.io/61966
 	// +optional
 	DoNotUseExternalID string
+}
+
+type ClusterTaints struct {
+	Key string
+	Value string
+	Effect TaintEffect
+	TimeAdded *metav1.Time
 }
 
 // Deprecated: NodeConfigSource specifies a source of node configuration. Exactly one subfield must be non-nil.

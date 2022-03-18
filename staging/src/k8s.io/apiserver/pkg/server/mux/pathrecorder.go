@@ -35,7 +35,7 @@ import (
 type PathRecorderMux struct {
 	// name is used for logging so you can trace requests through
 	name string
-
+	// 同步锁
 	lock            sync.Mutex
 	notFoundHandler http.Handler
 	pathToHandler   map[string]http.Handler

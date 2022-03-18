@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: <pod-name>
+  namespace: <pod-namespace>
+  labels:
+  - <key>: <value>
+  annotations:
+  - <key>: <value>
+spec:
+  ...
+  clusterSelector:
+  - <cluster-label-key>: <cluster-label-value>
+  affinity:
+    ...
+    clusterName: <cluster-name>
+    clusterAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        clusterSelectorTerm:
+        - matchExpressions:
+          - key: <cluster-label-key>
+            operator: [In | NotIn | Exists | DoesNotExist | Gt | Lt]
+            value: <cluster-label-value>
+          matchFields:
+          - key: <cluster-field-key>
+            operator: [In | NotIn | Exists | DoesNotExist | Gt | Lt]
+            value: <cluster-field-value>
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: <weight>
+        preference:
+          matchExpressions:
+            - key: <cluster-label-key>
+              operator: [In | NotIn | Exists | DoesNotExist | Gt | Lt]
+              value: <cluster-label-value>
+          matchFields:
+            - key: <cluster-field-key>
+              operator: [In | NotIn | Exists | DoesNotExist | Gt | Lt]
+              value: <cluster-field-value>
+    clusterToleration:
+    - key: <cluster-taint-key>
+      operator: [Exists | Equal]
+      value: <cluster-taint-value>
+      effect: [NoSchedule | PreferNoSchedule | NoExecute]
+      tolerationSeconds: <time>
+status:
+  ...
+  nominatedClusterName: <cluster-name>
