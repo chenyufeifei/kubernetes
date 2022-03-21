@@ -21,25 +21,26 @@ func CreateServerChain(completedOptions completedServerRunOptions, stopCh <-chan
 		return nil, err
 	}
 
-	// If additional API servers are added, they should be gated.
+	// 配置APIExtensionsServer， 并创建服务
 	apiExtensionsConfig, err := createAPIExtensionsConfig(*kubeAPIServerConfig.GenericConfig, kubeAPIServerConfig.ExtraConfig.VersionedInformers, pluginInitializer, completedOptions.ServerRunOptions, completedOptions.MasterCount,
 		serviceResolver, webhook.NewDefaultAuthenticationInfoResolverWrapper(kubeAPIServerConfig.ExtraConfig.ProxyTransport, kubeAPIServerConfig.GenericConfig.EgressSelector, kubeAPIServerConfig.GenericConfig.LoopbackClientConfig, kubeAPIServerConfig.GenericConfig.TracerProvider))
 	if err != nil {
 		return nil, err
 	}
-
 	notFoundHandler := notfoundhandler.New(kubeAPIServerConfig.GenericConfig.Serializer, genericapifilters.NoMuxAndDiscoveryIncompleteKey)
 	apiExtensionsServer, err := createAPIExtensionsServer(apiExtensionsConfig, genericapiserver.NewEmptyDelegateWithCustomHandler(notFoundHandler))
 	if err != nil {
 		return nil, err
 	}
 
+	// 创建kubeAPIServerConfig服务
 	kubeAPIServer, err := CreateKubeAPIServer(kubeAPIServerConfig, apiExtensionsServer.GenericAPIServer)
 	if err != nil {
 		return nil, err
 	}
 
 	// aggregator comes last in the chain
+	// 配置 AggregatorServer，
 	aggregatorConfig, err := createAggregatorConfig(*kubeAPIServerConfig.GenericConfig, completedOptions.ServerRunOptions, kubeAPIServerConfig.ExtraConfig.VersionedInformers, serviceResolver, kubeAPIServerConfig.ExtraConfig.ProxyTransport, pluginInitializer)
 	if err != nil {
 		return nil, err
@@ -53,6 +54,8 @@ func CreateServerChain(completedOptions completedServerRunOptions, stopCh <-chan
 	return aggregatorServer, nil
 }
 ```
+
+ `CreateKubeAPIServerConfig` 方法 -> `buildGenericConfig` -> `genericapiserver.NewConfig` -> `DefaultBuildHandlerChain`，在 `DefaultBuildHandlerChain` 方法中会对apiserver接口的链式判断，即俗称的filter操作。它的重点是每次链式判断会接受一个handler作为参数，并返回一个handler，作为下一次链式判断的参数。
 
 
 
@@ -69,7 +72,27 @@ func CreateKubeAPIServer(kubeAPIServerConfig *controlplane.Config, delegateAPISe
 }
 ```
 
+正式运行
 
+```go
+d
+```
+
+#### 生命周期信号
+
+kubernetes 生命周期信号总共有 6 个，其都是`lifecycleSignal`类型。
+
+- `ShutdownInitiated` 当 apiserver 开始关机时，将会发出该信号。当主协程 的“stopCh” 收到终止信号并因此关闭时，它将会发出信号。
+- `AfterShutdownDelayDuration` 在 ShutdownInitiated 后经过 ShutdownDelayDuration 长的时间后立即发出信号
+- `InFlightRequestsDrained  ` 
+- `HTTPServerStoppedListening` 
+- `HasBeenReady` 
+- `MuxAndDiscoveryComplete` 当所有已知的HTTP路径都已安装时，会发出MuxAndDiscoveryComplete信号。
+
+在`namedChannelWrapper`中定义了一个通道，并实现 `lifecycleSignal` 包含的两个方法
+
+-  `Signal`  关闭通道
+- `Signaled` 一直返回一个相同的通道。当 `Signal` 被调用后，该通道会被关闭。
 
 
 
@@ -96,6 +119,30 @@ func CreateKubeAPIServer(kubeAPIServerConfig *controlplane.Config, delegateAPISe
 一个go-restful项目可以由多个container组成，每个container相当于一个单独的HTTP Server。一个container由多个We
 
 bService组成。一个WebService由多个Handler组成。
+
+
+
+`kubernetes/staging/src/k8s.io/apiserver/pkg/endpoints/discovery` 目录下的 `group.go` 、 `legacy.go` 、 `root.go`  `version.go` 实现了客户端通过Get请求获取相关资源信息。
+
+
+
+
+
+
+
+`PathRecorderMux`
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```go
 func NewAPIServerHandler(name string, s runtime.NegotiatedSerializer, handlerChainBuilder HandlerChainBuilderFn, notFoundHandler http.Handler) *APIServerHandler {
@@ -128,16 +175,6 @@ func NewAPIServerHandler(name string, s runtime.NegotiatedSerializer, handlerCha
 	}
 }
 ```
-
-
-
-
-
-
-
-`PathRecorderMux`
-
-
 
 
 

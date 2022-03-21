@@ -153,6 +153,7 @@ func (s *SecureServingInfo) Serve(handler http.Handler, shutdownTimeout time.Dur
 		return nil, nil, err
 	}
 
+	// 创建一个服务端对象
 	secureServer := &http.Server{
 		Addr:           s.Listener.Addr().String(),
 		Handler:        handler,
@@ -208,6 +209,7 @@ func (s *SecureServingInfo) Serve(handler http.Handler, shutdownTimeout time.Dur
 // have been processed.
 // This function does not block
 // TODO: make private when insecure serving is gone from the kube-apiserver
+// 运行一个服务端
 func RunServer(
 	server *http.Server,
 	ln net.Listener,

@@ -9,11 +9,14 @@ metadata:
   - <key>: <value>
 spec:
   ...
+
   clusterSelector:
   - <cluster-label-key>: <cluster-label-value>
   affinity:
     ...
-    clusterName: <cluster-name>
+    location:
+      nodeName: <node-name>
+      clusterName: <cluster-name>
     clusterAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         clusterSelectorTerm:

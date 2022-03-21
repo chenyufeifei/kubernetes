@@ -57,7 +57,7 @@ func (s *APIGroupHandler) WebService() *restful.WebService {
 	ws.Route(ws.GET("/").To(s.handle).
 		Doc("get information of a group").
 		Operation("getAPIGroup").
-		Produces(mediaTypes...).
+		Produces(mediaTypes...). // Produce 指定可以生成哪些 MIME 类型；匹配的将出现在 Content-Type Http 头部
 		Consumes(mediaTypes...).
 		Writes(metav1.APIGroup{}))
 	return ws

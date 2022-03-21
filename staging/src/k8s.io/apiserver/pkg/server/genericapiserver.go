@@ -216,13 +216,15 @@ type GenericAPIServer struct {
 	// Version will enable the /version endpoint if non-nil
 	Version *version.Info
 
-	// lifecycleSignals provides access to the various signals that happen during the life cycle of the apiserver.
+	// lifecycleSignals provides access to the vaqrious signals that happen during the life cycle of the apiserver.
 	lifecycleSignals lifecycleSignals
 
 	// muxAndDiscoveryCompleteSignals holds signals that indicate all known HTTP paths have been registered.
 	// it exists primarily to avoid returning a 404 response when a resource actually exists but we haven't installed the path to a handler.
 	// it is exposed for easier composition of the individual servers.
 	// the primary users of this field are the WithMuxCompleteProtection filter and the NotFoundHandler
+
+	// muxAndDiscoveryCompleteSignals 保存指示已知被注册的 HTTP 路径的信号。
 	muxAndDiscoveryCompleteSignals map[string]<-chan struct{}
 
 	// ShutdownSendRetryAfter dictates when to initiate shutdown of the HTTP
@@ -387,11 +389,10 @@ func (s *GenericAPIServer) PrepareRun() preparedGenericAPIServer {
 // or the secure port cannot be listened on initially.
 func (s preparedGenericAPIServer) Run(stopCh <-chan struct{}) error {
 	delayedStopCh := s.lifecycleSignals.AfterShutdownDelayDuration
+	// apiServer 关闭信号
 	shutdownInitiatedCh := s.lifecycleSignals.ShutdownInitiated
 
-	// spawn a new goroutine for closing the MuxAndDiscoveryComplete signal
-	// registration happens during construction of the generic api server
-	// the last server in the chain aggregates signals from the previous instances
+	// 确保所有的已知的HTTP路径都安装
 	go func() {
 		for _, muxAndDiscoveryCompletedSignal := range s.GenericAPIServer.MuxAndDiscoveryCompleteSignals() {
 			select {
@@ -410,7 +411,7 @@ func (s preparedGenericAPIServer) Run(stopCh <-chan struct{}) error {
 		defer delayedStopCh.Signal()
 		defer klog.V(1).InfoS("[graceful-termination] shutdown event", "name", delayedStopCh.Name())
 
-		<-stopCh
+		<-stopCh  // stopch 接受到信息
 
 		// As soon as shutdown is initiated, /readyz should start returning failure.
 		// This gives the load balancer a window defined by ShutdownDelayDuration to detect that /readyz is red

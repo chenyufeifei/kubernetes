@@ -233,7 +233,7 @@ func CreateProxyTransport() *http.Transport {
 	return proxyTransport
 }
 
-// CreateKubeAPIServerConfig 未运行 API Server  创建所有的资源，但并不运行它们
+// CreateKubeAPIServerConfig 未运行 API Server. 创建所有的资源，但并不运行它们
 func CreateKubeAPIServerConfig(s completedServerRunOptions) (
 	*controlplane.Config,
 	aggregatorapiserver.ServiceResolver,

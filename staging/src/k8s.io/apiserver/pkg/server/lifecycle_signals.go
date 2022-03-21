@@ -164,6 +164,7 @@ type namedChannelWrapper struct {
 	ch   chan struct{}
 }
 
+// Signal 关闭通道
 func (e *namedChannelWrapper) Signal() {
 	e.once.Do(func() {
 		close(e.ch)
